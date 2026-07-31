@@ -1,0 +1,16 @@
+{
+  "name": "اختبرني · مركز معاوية",
+  "short_name": "اختبرني",
+  "description": "وحدة اختبرني — تعمل دون اتصال",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0b2e27",
+  "background_color": "#07211c",
+  "icons": [
+    { "src": "./assets/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
