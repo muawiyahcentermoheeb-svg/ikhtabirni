@@ -1,12 +1,16 @@
- import * as db from './db.js';
+import * as db from './db.js';
 import { parseFile } from './importer.js';
 import { loadSurahs, setupSmartFiltering, generateQuestion, displayQuestion, saveSettings, loadSettings, showSettings, showQuestion } from './teacher.js';
 
 const $ = (id) => document.getElementById(id);
-const importScreen = $('importScreen'), homeScreen = $('homeScreen'), teacherScreen = $('teacherScreen');
-const fileInput = $('fileInput'), prog = $('importProgress'), progMsg = $('importMsg'), errBox = $('importError');
+const importScreen = $('importScreen');
+const homeScreen = $('homeScreen');
+const teacherScreen = $('teacherScreen');
+const fileInput = $('fileInput');
+const prog = $('importProgress');
+const progMsg = $('importMsg');
+const errBox = $('importError');
 
-/* شارة الاتصال */
 function paintNet() {
   const b = $('netBadge');
   const on = navigator.onLine;
@@ -17,12 +21,10 @@ window.addEventListener('online', paintNet);
 window.addEventListener('offline', paintNet);
 paintNet();
 
-/* عامل الخدمة */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 }
 
-/* عرض الإحصاء بعد النجاح */
 function renderHome(stats) {
   const g = $('statsGrid');
   const d = stats.difficulty;
@@ -39,28 +41,22 @@ function renderHome(stats) {
   const sl = $('sampleList');
   sl.innerHTML = ['سهل', 'متوسط', 'صعب'].map((lvl) => {
     const s = stats.samples?.[lvl];
-    if (!s) return `<div class="sample lvl-${lvl}">لا توجد عينة لمستوى «${lvl}».</div>`;
-    return `<div class="sample lvl-${lvl}">${escapeHtml(s.text)}
-      <span class="meta">${lvl} · ${s.surahName} · صفحة ${s.page} · جزء معكوس ${s.juzReverse}</span></div>`;
+    if (!s) return `<div class="sample">لا توجد عينة لمستوى «${lvl}».</div>`;
+    return `<div class="sample">${s.text.slice(0, 80)}...<br><small>${lvl} · ${s.surahName} · صفحة ${s.page}</small></div>`;
   }).join('');
 
-  if (stats.warnings?.length) {
-    g.insertAdjacentHTML('beforeend',
-      `<div class="stat warn" style="grid-column:1/-1"><div class="n">⚠</div><div class="l">${escapeHtml(stats.warnings.join(' — '))}</div></div>`);
-  }
   importScreen.hidden = true;
   homeScreen.hidden = false;
 }
 
-function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
-
-/* الاستيراد */
 fileInput.addEventListener('change', async (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
-  errBox.hidden = true; prog.hidden = false; progMsg.textContent = 'جارٍ قراءة الملف…';
+  errBox.hidden = true;
+  prog.hidden = false;
+  progMsg.textContent = 'جارٍ قراءة الملف…';
+  
   try {
-    progMsg.textContent = 'جارٍ تحليل الآيات واشتقاق الأجزاء…';
     const { verses, surahs, stats } = await parseFile(file);
     progMsg.textContent = `جارٍ حفظ ${verses.length} آية محلياً…`;
     await db.saveAll(verses, surahs, stats);
@@ -75,15 +71,13 @@ fileInput.addEventListener('change', async (e) => {
   }
 });
 
-/* إعادة الاستيراد */
 $('reimportBtn').addEventListener('click', async () => {
-  if (!confirm('سيُمسح ما حُفظ محلياً وتعود لشاشة تحميل الملف. متابعة؟')) return;
+  if (!confirm('سيُمسح ما حُفظ محلياً. متابعة؟')) return;
   await db.clearAll();
   homeScreen.hidden = true;
   importScreen.hidden = false;
 });
 
-/* التنقل بين الشاشات */
 document.querySelectorAll('.feature-card').forEach((c) => {
   c.addEventListener('click', async () => {
     if (c.disabled) return;
@@ -97,8 +91,17 @@ document.querySelectorAll('.feature-card').forEach((c) => {
       
       const saved = loadSettings();
       if (saved) {
-        $('rangeType').value = saved.rangeType;
-        // تحديث الحقول الأخرى حسب الإعدادات المحفوظة
+        $('rangeType').value = saved.rangeType || 'surah';
+        $('difficultyMethod').value = saved.difficultyMethod || 'file';
+        $('nonRepeat').value = saved.nonRepeat || '20';
+        
+        // تحديث chips
+        document.querySelectorAll('.chip[data-size]').forEach(chip => {
+          chip.classList.toggle('active', parseInt(chip.dataset.size) === (saved.size || 7));
+        });
+        document.querySelectorAll('.chip[data-level]').forEach(chip => {
+          chip.classList.toggle('active', chip.dataset.level === (saved.difficultyLevel || 'سهل'));
+        });
       }
     }
   });
@@ -110,13 +113,20 @@ $('backToHome').addEventListener('click', () => {
 });
 
 $('generateBtn').addEventListener('click', async () => {
+  const rangeType = $('rangeType').value;
+  const from = rangeType === 'surah' ? parseInt($('fromSurah').value) : 
+               rangeType === 'juz' ? parseInt($('fromJuz').value) : 
+               parseInt($('singleSurahSelect').value);
+  const to = rangeType === 'surah' ? parseInt($('toSurah').value) : 
+             rangeType === 'juz' ? parseInt($('toJuz').value) : from;
+  
   const settings = {
-    rangeType: $('rangeType').value,
-    from: parseInt($('fromSurah').value) || parseInt($('fromJuz').value) || parseInt($('singleSurahSelect').value),
-    to: parseInt($('toSurah').value) || parseInt($('toJuz').value) || parseInt($('singleSurahSelect').value),
-    size: parseInt(document.querySelector('.chip.active[data-size]').dataset.size),
+    rangeType,
+    from,
+    to,
+    size: parseInt(document.querySelector('.chip.active[data-size]')?.dataset.size || '7'),
     difficultyMethod: $('difficultyMethod').value,
-    difficultyLevel: document.querySelector('.chip.active[data-level]').dataset.level,
+    difficultyLevel: document.querySelector('.chip.active[data-level]')?.dataset.level || 'سهل',
     nonRepeat: parseInt($('nonRepeat').value)
   };
   
@@ -161,7 +171,6 @@ $('changeSettingsBtn').addEventListener('click', () => {
   showSettings();
 });
 
-/* البدء */
 (async () => {
   if (await db.isReady()) {
     const stats = await db.getStats();
