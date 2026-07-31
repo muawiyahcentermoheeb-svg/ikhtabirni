@@ -1,0 +1,56 @@
+/* عامل الخدمة — الأوفلاين. غيّر VER مع كل نشر جديد */
+const VER = 'ikhtabirni-v1';
+const CORE = `${VER}-core`;
+const CDN  = `${VER}-cdn`;
+
+const PRECACHE = [
+  './', './index.html', './manifest.webmanifest',
+  './css/style.css',
+  './js/app.js', './js/db.js', './js/importer.js', './js/constants.js',
+  './assets/icons/icon.svg'
+];
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(caches.open(CORE).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CORE && k !== CDN).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+
+  // مكتبة الإكسل من CDN: كاش أولاً (تتحديث نادراً)
+  if (url.hostname === 'cdn.jsdelivr.net') {
+    e.respondWith(cacheFirst(req, CDN));
+    return;
+  }
+  // تنقّل الصفحات: الشبكة أولاً ثم النسخة المحلية
+  if (req.mode === 'navigate') {
+    e.respondWith(
+      fetch(req).then((r) => { const cp = r.clone(); caches.open(CORE).then((c) => c.put(req, cp)); return r; })
+        .catch(() => caches.match(req).then((h) => h || caches.match('./index.html')))
+    );
+    return;
+  }
+  // الباقي: استجابة محلية فورية + تحديث صامت
+  e.respondWith(staleWhileRevalidate(req, CORE));
+});
+
+async function cacheFirst(req, name) {
+  const hit = await caches.match(req);
+  const net = fetch(req).then((r) => { if (r && r.ok) { const cp = r.clone(); caches.open(name).then((c) => c.put(req, cp)); } return r; }).catch(() => hit);
+  return hit || net;
+}
+async function staleWhileRevalidate(req, name) {
+  const cache = await caches.open(name);
+  const hit = await cache.match(req);
+  const net = fetch(req).then((r) => { if (r && r.ok) cache.put(req, r.clone()); return r; }).catch(() => hit);
+  return hit || net;
+}
