@@ -81,5 +81,99 @@ body{font-family:var(--font);color:var(--text);background:linear-gradient(180deg
 .foot{position:relative;z-index:1;display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap;
   padding:.8rem 1.1rem;border-top:1px solid var(--line);color:var(--muted);font-size:.72rem}
 
+/* شاشة المعلم */
+.setting-group {
+  margin: 1rem 0;
+}
+
+.setting-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.setting-group select {
+  width: 100%;
+  padding: 0.7rem;
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1rem;
+}
+
+.chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.chip {
+  padding: 0.5rem 1rem;
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 0.9rem;
+}
+
+.chip.active {
+  background: var(--gold);
+  color: #241a06;
+  border-color: var(--gold);
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(180deg, var(--gold), var(--gold2));
+  color: #241a06;
+  border: none;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.btn-secondary {
+  padding: 0.7rem 1.2rem;
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font);
+}
+
+.question-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.surah-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--emerald);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.question-text {
+  font-size: 1.8rem;
+  line-height: 2.2;
+  text-align: center;
+  padding: 1.5rem;
+  background: var(--surface2);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  font-family: 'Traditional Arabic', 'Amiri', serif;
+}
+
 @media (max-width:420px){.stats-grid{grid-template-columns:1fr 1fr}.cards-row{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
