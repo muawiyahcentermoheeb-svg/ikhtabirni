@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b2e27" />
+  <title>اختبرني · مركز معاوية</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icons/icon.svg" />
+  <link rel="apple-touch-icon" href="./assets/icons/icon.svg" />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <!-- زخرفة إسلامية هندسية في الخلفية (بلا ذوات أرواح) -->
+  <div class="bg-ornament" aria-hidden="true">
+    <svg class="star8 s1" viewBox="0 0 100 100"><path d="M50 0 61 39 100 50 61 61 50 100 39 61 0 50 39 39Z"/></svg>
+    <svg class="star8 s2" viewBox="0 0 100 100"><path d="M50 0 61 39 100 50 61 61 50 100 39 61 0 50 39 39Z"/></svg>
+    <svg class="crescent" viewBox="0 0 100 100"><path d="M70 10a40 40 0 1 0 0 80 32 32 0 1 1 0-80Z"/></svg>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48"><path d="M24 2 29 19 46 24 29 29 24 46 19 29 2 24 19 19Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="24" cy="24" r="5" fill="currentColor"/></svg>
+      </span>
+      <div>
+        <h1 class="brand-name">اختبرني</h1>
+        <p class="brand-sub">مركز معاوية لتحفيظ القرآن</p>
+      </div>
+    </div>
+    <span id="netBadge" class="net-badge">—</span>
+  </header>
+
+  <main class="shell">
+
+    <!-- شاشة الاستيراد الأولي -->
+    <section id="importScreen" class="card" hidden>
+      <h2 class="card-title">الخطوة الأولى: تحميل بيانات المصحف</h2>
+      <p class="muted">يعمل التطبيق بالكامل دون إنترنت. اختر ملف التصنيف
+        <b>«الآيات مقسم للاختبارات سهل - وسط - صعب.xlsx»</b>
+        من جهازك ليُقرأ محلياً ويُبنى منه كل شيء.</p>
+      <label class="file-btn" for="fileInput">📂 اختر ملف الإكسل (xlsx / xls / csv)</label>
+      <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" hidden />
+      <div id="importProgress" class="progress" hidden>
+        <div class="spinner"></div><span id="importMsg">جارٍ القراءة…</span>
+      </div>
+      <div id="importError" class="error" hidden></div>
+    </section>
+
+    <!-- الشاشة الرئيسية (بعد نجاح الاستيراد) -->
+    <section id="homeScreen" hidden>
+      <div class="card stats-card">
+        <h2 class="card-title">تم بناء قاعدة البيانات بنجاح ✅</h2>
+        <div id="statsGrid" class="stats-grid"></div>
+        <details class="sample-box">
+          <summary>عيّنة للتأكد من القراءة (آية من كل مستوى)</summary>
+          <div id="sampleList" class="sample-list"></div>
+        </details>
+      </div>
+
+      <div class="cards-row">
+        <button class="feature-card teacher" data-go="teacher">
+          <span class="fc-icon"></span>
+          <span class="fc-title">اختبرني — للمعلم</span>
+          <span class="fc-desc">تحضير الأسئلة بخط عثماني</span>
+          <span class="fc-tag building">يُبنى في الخطوة التالية</span>
+        </button>
+        <button class="feature-card student" data-go="student" disabled>
+          <span class="fc-icon"></span>
+          <span class="fc-title">اختبرني — للطالب</span>
+          <span class="fc-desc">الألعاب والتحفيز</span>
+          <span class="fc-tag">قريباً</span>
+        </button>
+      </div>
+
+      <div class="card manage-card">
+        <button id="reimportBtn" class="link-btn">🔄 إعادة تحميل الملف / مسح البيانات</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="foot">
+    <span>المرحلة ٠ · الأساس</span>
+    <span id="verTag">يعمل أوفلاين</span>
+  </footer>
+
+  <!-- مكتبة قراءة الإكسل داخل المتصفح (تُكاش للعمل أوفلاين) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
