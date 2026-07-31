@@ -1,4 +1,3 @@
-// طبقة التخزين المحلي (IndexedDB) — قلب الأوفلاين
 const DB_NAME = 'ikhtabirni_db';
 const DB_VER = 1;
 
@@ -8,18 +7,14 @@ function open() {
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains('verses')) {
-        const v = db.createObjectStore('verses', { keyPath: 'origOrder' });
-        v.createIndex('surahRevOrder', 'surahRevOrder');
-        v.createIndex('juzReverse', 'juzReverse');
-        v.createIndex('difficulty', 'difficulty');
-        v.createIndex('page', 'page');
-        v.createIndex('surahOrigNumber', 'surahOrigNumber');
+        db.createObjectStore('verses', { keyPath: 'origOrder' });
       }
       if (!db.objectStoreNames.contains('surahs')) {
-        const s = db.createObjectStore('surahs', { keyPath: 'origNumber' });
-        s.createIndex('revOrder', 'revOrder');
+        db.createObjectStore('surahs', { keyPath: 'origNumber' });
       }
-      if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
+      if (!db.objectStoreNames.contains('meta')) {
+        db.createObjectStore('meta', { keyPath: 'key' });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -58,8 +53,8 @@ export async function getStats() {
 
 export async function getSurahsByReverse() {
   const db = await open();
-  const all = await reqP(tx(db, ['surahs'], 'readonly').objectStore('surahs').index('revOrder').getAll());
-  return all;
+  const all = await reqP(tx(db, ['surahs'], 'readonly').objectStore('surahs').getAll());
+  return all.sort((a, b) => a.revOrder - b.revOrder);
 }
 
 export async function clearAll() {
@@ -71,44 +66,26 @@ export async function clearAll() {
   return new Promise((res, rej) => { t.oncomplete = () => res(); t.onerror = () => rej(t.error); });
 }
 
-// جلب الآيات حسب نطاق السور (بالترتيب المعكوس)
-// fromRev و toRev هما reverse_surah_order من ملفك
-export async function getVersesBySurahRange(fromRev, toRev) {
-  const db = await open();
-  const all = await reqP(tx(db, ['verses'], 'readonly').objectStore('verses').getAll());
-  return all.filter(v => v.surahRevOrder >= fromRev && v.surahRevOrder <= toRev);
-}
-
-// جلب الآيات حسب نطاق الأجزاء (بالترتيب المعكوس)
-// fromRev و toRev هما juzReverse (1 = عمّ، 30 = البقرة)
-export async function getVersesByJuzRange(fromRev, toRev) {
-  const db = await open();
-  const all = await reqP(tx(db, ['verses'], 'readonly').objectStore('verses').getAll());
-  return all.filter(v => v.juzReverse >= fromRev && v.juzReverse <= toRev);
-}
-
-// جلب آيات سورة واحدة
-export async function getVersesBySurah(surahRevOrder) {
-  const db = await open();
-  const all = await reqP(tx(db, ['verses'], 'readonly').objectStore('verses').getAll());
-  return all.filter(v => v.surahRevOrder === surahRevOrder);
-}
-
-// جلب آيات حسب مستوى الصعوبة
-export async function getVersesByDifficulty(difficulty) {
-  const db = await open();
-  const all = await reqP(tx(db, ['verses'], 'readonly').objectStore('verses').index('difficulty').getAll(difficulty));
-  return all;
-}
-
 // جلب جميع الآيات
 export async function getAllVerses() {
   const db = await open();
   return await reqP(tx(db, ['verses'], 'readonly').objectStore('verses').getAll());
 }
 
-// جلب آية معينة بـ origOrder
-export async function getVerseByOrigOrder(origOrder) {
-  const db = await open();
-  return await reqP(tx(db, ['verses'], 'readonly').objectStore('verses').get(origOrder));
+// جلب الآيات حسب نطاق السور (بالترتيب المعكوس)
+export async function getVersesBySurahRange(fromRev, toRev) {
+  const all = await getAllVerses();
+  return all.filter(v => v.surahRevOrder >= fromRev && v.surahRevOrder <= toRev);
+}
+
+// جلب الآيات حسب نطاق الأجزاء (بالترتيب المعكوس)
+export async function getVersesByJuzRange(fromRev, toRev) {
+  const all = await getAllVerses();
+  return all.filter(v => v.juzReverse >= fromRev && v.juzReverse <= toRev);
+}
+
+// جلب آيات سورة واحدة
+export async function getVersesBySurah(surahRevOrder) {
+  const all = await getAllVerses();
+  return all.filter(v => v.surahRevOrder === surahRevOrder);
 }
