@@ -1,8 +1,9 @@
-import * as db from './db.js';
+ import * as db from './db.js';
 import { parseFile } from './importer.js';
+import { loadSurahs, setupSmartFiltering, generateQuestion, displayQuestion, saveSettings, loadSettings, showSettings, showQuestion } from './teacher.js';
 
 const $ = (id) => document.getElementById(id);
-const importScreen = $('importScreen'), homeScreen = $('homeScreen');
+const importScreen = $('importScreen'), homeScreen = $('homeScreen'), teacherScreen = $('teacherScreen');
 const fileInput = $('fileInput'), prog = $('importProgress'), progMsg = $('importMsg'), errBox = $('importError');
 
 /* شارة الاتصال */
@@ -82,12 +83,82 @@ $('reimportBtn').addEventListener('click', async () => {
   importScreen.hidden = false;
 });
 
-/* بطاقات الميزات (المعلم = الخطوة التالية) */
+/* التنقل بين الشاشات */
 document.querySelectorAll('.feature-card').forEach((c) => {
-  c.addEventListener('click', () => {
+  c.addEventListener('click', async () => {
     if (c.disabled) return;
-    alert('شاشة «' + c.dataset.go + '» تُبنى في الخطوة التالية فوق هذا الأساس الجاهز.');
+    
+    if (c.dataset.go === 'teacher') {
+      homeScreen.hidden = true;
+      teacherScreen.hidden = false;
+      
+      await loadSurahs();
+      setupSmartFiltering();
+      
+      const saved = loadSettings();
+      if (saved) {
+        $('rangeType').value = saved.rangeType;
+        // تحديث الحقول الأخرى حسب الإعدادات المحفوظة
+      }
+    }
   });
+});
+
+$('backToHome').addEventListener('click', () => {
+  teacherScreen.hidden = true;
+  homeScreen.hidden = false;
+});
+
+$('generateBtn').addEventListener('click', async () => {
+  const settings = {
+    rangeType: $('rangeType').value,
+    from: parseInt($('fromSurah').value) || parseInt($('fromJuz').value) || parseInt($('singleSurahSelect').value),
+    to: parseInt($('toSurah').value) || parseInt($('toJuz').value) || parseInt($('singleSurahSelect').value),
+    size: parseInt(document.querySelector('.chip.active[data-size]').dataset.size),
+    difficultyMethod: $('difficultyMethod').value,
+    difficultyLevel: document.querySelector('.chip.active[data-level]').dataset.level,
+    nonRepeat: parseInt($('nonRepeat').value)
+  };
+  
+  try {
+    const verses = await generateQuestion(settings);
+    displayQuestion(verses);
+    showQuestion();
+    saveSettings(settings);
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const parent = chip.parentElement;
+    parent.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+  });
+});
+
+$('rangeType').addEventListener('change', (e) => {
+  const val = e.target.value;
+  $('surahRange').hidden = val !== 'surah';
+  $('juzRange').hidden = val !== 'juz';
+  $('singleSurah').hidden = val !== 'single';
+});
+
+$('changeQuestionBtn').addEventListener('click', async () => {
+  const settings = loadSettings();
+  if (settings) {
+    try {
+      const verses = await generateQuestion(settings);
+      displayQuestion(verses);
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+});
+
+$('changeSettingsBtn').addEventListener('click', () => {
+  showSettings();
 });
 
 /* البدء */
