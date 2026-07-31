@@ -70,3 +70,24 @@ export async function clearAll() {
   t.objectStore('meta').put({ key: 'ready', value: false });
   return new Promise((res, rej) => { t.oncomplete = () => res(); t.onerror = () => rej(t.error); });
 }
+
+// جلب الآيات حسب نطاق السور (بالترتيب المعكوس)
+export async function getVersesBySurahRange(fromRev, toRev) {
+  const db = await open();
+  const all = await reqP(tx(db, ['verses'], 'readonly').objectStore('verses').getAll());
+  return all.filter(v => v.surahRevOrder >= fromRev && v.surahRevOrder <= toRev);
+}
+
+// جلب الآيات حسب نطاق الأجزاء (بالترتيب المعكوس)
+export async function getVersesByJuzRange(fromRev, toRev) {
+  const db = await open();
+  const all = await reqP(tx(db, ['verses'], 'readonly').objectStore('verses').getAll());
+  return all.filter(v => v.juzReverse >= fromRev && v.juzReverse <= toRev);
+}
+
+// جلب آيات سورة واحدة
+export async function getVersesBySurah(surahRevOrder) {
+  const db = await open();
+  const all = await reqP(tx(db, ['verses'], 'readonly').objectStore('verses').getAll());
+  return all.filter(v => v.surahRevOrder === surahRevOrder);
+}
