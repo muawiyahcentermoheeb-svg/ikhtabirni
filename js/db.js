@@ -9,11 +9,11 @@ function open() {
       const db = req.result;
       if (!db.objectStoreNames.contains('verses')) {
         const v = db.createObjectStore('verses', { keyPath: 'origOrder' });
-        v.createIndex('surahOrig', 'surahOrigNumber');
-        v.createIndex('juzRev', 'juzReverse');
-        v.createIndex('juzOrig', 'juzOriginal');
+        v.createIndex('surahRevOrder', 'surahRevOrder');
+        v.createIndex('juzReverse', 'juzReverse');
         v.createIndex('difficulty', 'difficulty');
         v.createIndex('page', 'page');
+        v.createIndex('surahOrigNumber', 'surahOrigNumber');
       }
       if (!db.objectStoreNames.contains('surahs')) {
         const s = db.createObjectStore('surahs', { keyPath: 'origNumber' });
@@ -72,6 +72,7 @@ export async function clearAll() {
 }
 
 // جلب الآيات حسب نطاق السور (بالترتيب المعكوس)
+// fromRev و toRev هما reverse_surah_order من ملفك
 export async function getVersesBySurahRange(fromRev, toRev) {
   const db = await open();
   const all = await reqP(tx(db, ['verses'], 'readonly').objectStore('verses').getAll());
@@ -79,6 +80,7 @@ export async function getVersesBySurahRange(fromRev, toRev) {
 }
 
 // جلب الآيات حسب نطاق الأجزاء (بالترتيب المعكوس)
+// fromRev و toRev هما juzReverse (1 = عمّ، 30 = البقرة)
 export async function getVersesByJuzRange(fromRev, toRev) {
   const db = await open();
   const all = await reqP(tx(db, ['verses'], 'readonly').objectStore('verses').getAll());
@@ -90,4 +92,23 @@ export async function getVersesBySurah(surahRevOrder) {
   const db = await open();
   const all = await reqP(tx(db, ['verses'], 'readonly').objectStore('verses').getAll());
   return all.filter(v => v.surahRevOrder === surahRevOrder);
+}
+
+// جلب آيات حسب مستوى الصعوبة
+export async function getVersesByDifficulty(difficulty) {
+  const db = await open();
+  const all = await reqP(tx(db, ['verses'], 'readonly').objectStore('verses').index('difficulty').getAll(difficulty));
+  return all;
+}
+
+// جلب جميع الآيات
+export async function getAllVerses() {
+  const db = await open();
+  return await reqP(tx(db, ['verses'], 'readonly').objectStore('verses').getAll());
+}
+
+// جلب آية معينة بـ origOrder
+export async function getVerseByOrigOrder(origOrder) {
+  const db = await open();
+  return await reqP(tx(db, ['verses'], 'readonly').objectStore('verses').get(origOrder));
 }
