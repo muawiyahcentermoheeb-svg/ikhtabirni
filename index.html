@@ -63,7 +63,6 @@
           <span class="fc-icon"></span>
           <span class="fc-title">اختبرني — للمعلم</span>
           <span class="fc-desc">تحضير الأسئلة بخط عثماني</span>
-          <span class="fc-tag building">يُبنى في الخطوة التالية</span>
         </button>
         <button class="feature-card student" data-go="student" disabled>
           <span class="fc-icon"></span>
@@ -78,10 +77,110 @@
       </div>
     </section>
 
+    <!-- شاشة المعلم -->
+    <section id="teacherScreen" hidden>
+      <button id="backToHome" class="link-btn">← العودة للرئيسية</button>
+      
+      <!-- لوحة الإعدادات -->
+      <div id="settingsPanel" class="card">
+        <h2 class="card-title">إعدادات الاختبار</h2>
+        
+        <!-- نوع النطاق -->
+        <div class="setting-group">
+          <label>نطاق الاختبار:</label>
+          <select id="rangeType">
+            <option value="surah">من سورة إلى سورة</option>
+            <option value="juz">من جزء إلى جزء</option>
+            <option value="single">سورة واحدة</option>
+          </select>
+        </div>
+        
+        <!-- اختيار السور/الأجزاء -->
+        <div id="surahRange" class="setting-group">
+          <label>من:</label>
+          <select id="fromSurah"></select>
+          <label>إلى:</label>
+          <select id="toSurah"></select>
+        </div>
+        
+        <div id="juzRange" class="setting-group" hidden>
+          <label>من:</label>
+          <select id="fromJuz"></select>
+          <label>إلى:</label>
+          <select id="toJuz"></select>
+        </div>
+        
+        <div id="singleSurah" class="setting-group" hidden>
+          <label>السورة:</label>
+          <select id="singleSurahSelect"></select>
+        </div>
+        
+        <!-- حجم السؤال -->
+        <div class="setting-group">
+          <label>حجم السؤال (عدد الأسطر):</label>
+          <div class="chips">
+            <button class="chip" data-size="5">٥</button>
+            <button class="chip active" data-size="7">٧</button>
+            <button class="chip" data-size="15">١٥</button>
+            <button class="chip" data-size="22">٢٢</button>
+            <button class="chip" data-size="30">٣٠</button>
+          </div>
+        </div>
+        
+        <!-- مستوى الصعوبة -->
+        <div class="setting-group">
+          <label>طريقة تحديد المستوى:</label>
+          <select id="difficultyMethod">
+            <option value="file">حسب ملف التصنيف</option>
+            <option value="position">حسب موضع الصفحة</option>
+          </select>
+        </div>
+        
+        <div class="setting-group">
+          <label>المستوى:</label>
+          <div class="chips">
+            <button class="chip active" data-level="سهل">سهل</button>
+            <button class="chip" data-level="متوسط">متوسط</button>
+            <button class="chip" data-level="صعب">صعب</button>
+          </div>
+        </div>
+        
+        <!-- عدم التكرار -->
+        <div class="setting-group">
+          <label>نسبة عدم التكرار:</label>
+          <select id="nonRepeat">
+            <option value="20">٢٠ سؤال (افتراضي)</option>
+            <option value="5">١ من ٥</option>
+            <option value="10">١٠</option>
+            <option value="30">٣٠</option>
+            <option value="40">٤٠</option>
+            <option value="50">٥٠</option>
+            <option value="60">٦٠</option>
+            <option value="70">٧٠</option>
+            <option value="100">١٠٠</option>
+          </select>
+        </div>
+        
+        <button id="generateBtn" class="btn-primary">توليد السؤال</button>
+      </div>
+      
+      <!-- لوحة السؤال -->
+      <div id="questionPanel" class="card" hidden>
+        <h2 class="card-title">السؤال</h2>
+        <div id="surahName" class="surah-name"></div>
+        <div id="questionText" class="question-text"></div>
+        
+        <div class="question-actions">
+          <button id="changeQuestionBtn" class="btn-secondary">تغيير السؤال</button>
+          <button id="changeSettingsBtn" class="btn-secondary">تغيير الإعدادات</button>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <footer class="foot">
-    <span>المرحلة ٠ · الأساس</span>
+    <span>المرحلة ١ · شاشة المعلم</span>
     <span id="verTag">يعمل أوفلاين</span>
   </footer>
 
