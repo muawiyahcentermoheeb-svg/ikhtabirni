@@ -3,15 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b2e27" />
+  <meta name="theme-color" content="#05080d" />
   <title>اختبرني · مركز معاوية</title>
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="icon" type="image/svg+xml" href="./assets/icons/icon.svg" />
-  <link rel="apple-touch-icon" href="./assets/icons/icon.svg" />
+  <link rel="icon" type="image/png" href="./assets/logo.png" />
+  <link rel="apple-touch-icon" href="./assets/logo.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Cairo:wght@400;600;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./css/style.css" />
 </head>
 <body>
-  <!-- زخرفة إسلامية هندسية في الخلفية (بلا ذوات أرواح) -->
+  <!-- شاشة الترحيب -->
+  <div id="splashOverlay" class="splash">
+    <div class="splash-glow"></div>
+    <div class="splash-ring"></div>
+    <img class="splash-logo" src="./assets/logo.png" alt="شعار مركز معاوية" />
+    <h1 class="splash-title">اختبرني</h1>
+    <p class="splash-sub">مركز معاوية لتحفيظ القرآن</p>
+    <div class="splash-dots"><i></i><i></i><i></i></div>
+  </div>
+
   <div class="bg-ornament" aria-hidden="true">
     <svg class="star8 s1" viewBox="0 0 100 100"><path d="M50 0 61 39 100 50 61 61 50 100 39 61 0 50 39 39Z"/></svg>
     <svg class="star8 s2" viewBox="0 0 100 100"><path d="M50 0 61 39 100 50 61 61 50 100 39 61 0 50 39 39Z"/></svg>
@@ -19,10 +32,11 @@
   </div>
 
   <header class="topbar">
+    <button id="backBtn" class="back-btn" hidden aria-label="رجوع">
+      <svg viewBox="0 0 24 24" width="20" height="20"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
     <div class="brand">
-      <span class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 48 48"><path d="M24 2 29 19 46 24 29 29 24 46 19 29 2 24 19 19Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="24" cy="24" r="5" fill="currentColor"/></svg>
-      </span>
+      <img class="brand-logo" src="./assets/logo.png" alt="" />
       <div>
         <h1 class="brand-name">اختبرني</h1>
         <p class="brand-sub">مركز معاوية لتحفيظ القرآن</p>
@@ -32,144 +46,53 @@
   </header>
 
   <main class="shell">
-
-    <!-- شاشة الاستيراد الأولي -->
     <section id="importScreen" class="card" hidden>
-      <h2 class="card-title">الخطوة الأولى: تحميل بيانات المصحف</h2>
-      <p class="muted">يعمل التطبيق بالكامل دون إنترنت. اختر ملف التصنيف
-        <b>«الآيات مقسم للاختبارات سهل - وسط - صعب.xlsx»</b>
-        من جهازك ليُقرأ محلياً ويُبنى منه كل شيء.</p>
+      <h2 class="card-title">تحميل بيانات المصحف</h2>
+      <p class="muted">يعمل التطبيق بالكامل دون إنترنت. اختر ملف التصنيف من جهازك ليُقرأ محلياً.</p>
       <label class="file-btn" for="fileInput">📂 اختر ملف الإكسل (xlsx / xls / csv)</label>
       <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" hidden />
-      <div id="importProgress" class="progress" hidden>
-        <div class="spinner"></div><span id="importMsg">جارٍ القراءة…</span>
-      </div>
+      <div id="importProgress" class="progress" hidden><div class="spinner"></div><span id="importMsg">جارٍ القراءة…</span></div>
       <div id="importError" class="error" hidden></div>
     </section>
 
-    <!-- الشاشة الرئيسية (بعد نجاح الاستيراد) -->
     <section id="homeScreen" hidden>
       <div class="card stats-card">
         <h2 class="card-title">تم بناء قاعدة البيانات بنجاح ✅</h2>
         <div id="statsGrid" class="stats-grid"></div>
-        <details class="sample-box">
-          <summary>عيّنة للتأكد من القراءة (آية من كل مستوى)</summary>
-          <div id="sampleList" class="sample-list"></div>
-        </details>
       </div>
-
       <div class="cards-row">
         <button class="feature-card teacher" data-go="teacher">
-          <span class="fc-icon"></span>
-          <span class="fc-title">اختبرني — للمعلم</span>
-          <span class="fc-desc">تحضير الأسئلة بخط عثماني</span>
+          <span class="fc-icon">👨‍🏫</span><span class="fc-title">اختبرني — للمعلم</span><span class="fc-desc">تحضير الأسئلة بشكل الصفحة</span>
         </button>
-        <button class="feature-card student" data-go="student" disabled>
-          <span class="fc-icon"></span>
-          <span class="fc-title">اختبرني — للطالب</span>
-          <span class="fc-desc">الألعاب والتحفيز</span>
-          <span class="fc-tag">قريباً</span>
+        <button class="feature-card student" data-go="student">
+          <span class="fc-icon">🎮</span><span class="fc-title">اختبرني — للطالب</span><span class="fc-desc">الألعاب والتحفيز</span>
         </button>
       </div>
-
       <div class="card manage-card">
+        <button id="installBtn" class="btn-install" hidden>⬇ تثبيت التطبيق على الجهاز</button>
         <button id="reimportBtn" class="link-btn">🔄 إعادة تحميل الملف / مسح البيانات</button>
       </div>
     </section>
 
-    <!-- شاشة المعلم -->
     <section id="teacherScreen" hidden>
-      <button id="backToHome" class="link-btn">← العودة للرئيسية</button>
-      
-      <!-- لوحة الإعدادات -->
       <div id="settingsPanel" class="card">
         <h2 class="card-title">إعدادات الاختبار</h2>
-        
-        <!-- نوع النطاق -->
-        <div class="setting-group">
-          <label>نطاق الاختبار:</label>
-          <select id="rangeType">
-            <option value="surah">من سورة إلى سورة</option>
-            <option value="juz">من جزء إلى جزء</option>
-            <option value="single">سورة واحدة</option>
-          </select>
-        </div>
-        
-        <!-- اختيار السور/الأجزاء -->
-        <div id="surahRange" class="setting-group">
-          <label>من:</label>
-          <select id="fromSurah"></select>
-          <label>إلى:</label>
-          <select id="toSurah"></select>
-        </div>
-        
-        <div id="juzRange" class="setting-group" hidden>
-          <label>من:</label>
-          <select id="fromJuz"></select>
-          <label>إلى:</label>
-          <select id="toJuz"></select>
-        </div>
-        
-        <div id="singleSurah" class="setting-group" hidden>
-          <label>السورة:</label>
-          <select id="singleSurahSelect"></select>
-        </div>
-        
-        <!-- حجم السؤال -->
-        <div class="setting-group">
-          <label>حجم السؤال (عدد الأسطر):</label>
-          <div class="chips">
-            <button class="chip" data-size="5">٥</button>
-            <button class="chip active" data-size="7">٧</button>
-            <button class="chip" data-size="15">١٥</button>
-            <button class="chip" data-size="22">٢٢</button>
-            <button class="chip" data-size="30">٣٠</button>
-          </div>
-        </div>
-        
-        <!-- مستوى الصعوبة -->
-        <div class="setting-group">
-          <label>طريقة تحديد المستوى:</label>
-          <select id="difficultyMethod">
-            <option value="file">حسب ملف التصنيف</option>
-            <option value="position">حسب موضع الصفحة</option>
-          </select>
-        </div>
-        
-        <div class="setting-group">
-          <label>المستوى:</label>
-          <div class="chips">
-            <button class="chip active" data-level="سهل">سهل</button>
-            <button class="chip" data-level="متوسط">متوسط</button>
-            <button class="chip" data-level="صعب">صعب</button>
-          </div>
-        </div>
-        
-        <!-- عدم التكرار -->
-        <div class="setting-group">
-          <label>نسبة عدم التكرار:</label>
-          <select id="nonRepeat">
-            <option value="20">٢٠ سؤال (افتراضي)</option>
-            <option value="5">١ من ٥</option>
-            <option value="10">١٠</option>
-            <option value="30">٣٠</option>
-            <option value="40">٤٠</option>
-            <option value="50">٥٠</option>
-            <option value="60">٦٠</option>
-            <option value="70">٧٠</option>
-            <option value="100">١٠٠</option>
-          </select>
-        </div>
-        
+        <div class="setting-group"><label>نطاق الاختبار:</label>
+          <select id="rangeType"><option value="surah">من سورة إلى سورة</option><option value="juz">من جزء إلى جزء</option><option value="single">سورة واحدة</option></select></div>
+        <div id="surahRange" class="setting-group row2"><label>من:</label><select id="fromSurah"></select><label>إلى:</label><select id="toSurah"></select></div>
+        <div id="juzRange" class="setting-group row2" hidden><label>من:</label><select id="fromJuz"></select><label>إلى:</label><select id="toJuz"></select></div>
+        <div id="singleSurah" class="setting-group" hidden><label>السورة:</label><select id="singleSurahSelect"></select></div>
+        <div class="setting-group"><label>حجم السؤال (أسطر):</label>
+          <div class="chips"><button class="chip" data-size="5">٥</button><button class="chip active" data-size="7">٧</button><button class="chip" data-size="15">١٥</button><button class="chip" data-size="22">٢٢</button><button class="chip" data-size="30">٣٠</button></div></div>
+        <div class="setting-group"><label>طريقة المستوى:</label>
+          <select id="difficultyMethod"><option value="file">حسب ملف التصنيف</option><option value="position">حسب موضع الصفحة</option></select></div>
+        <div class="setting-group"><label>المستوى:</label>
+          <div class="chips"><button class="chip active" data-level="سهل">سهل</button><button class="chip" data-level="متوسط">متوسط</button><button class="chip" data-level="صعب">صعب</button></div></div>
         <button id="generateBtn" class="btn-primary">توليد السؤال</button>
       </div>
-      
-      <!-- لوحة السؤال -->
       <div id="questionPanel" class="card" hidden>
-        <h2 class="card-title">السؤال</h2>
-        <div id="surahName" class="surah-name"></div>
-        <div id="questionText" class="question-text"></div>
-        
+        <div id="teacherSurahName" class="surah-name"></div>
+        <div id="teacherQuestionText"></div>
         <div class="question-actions">
           <button id="changeQuestionBtn" class="btn-secondary">تغيير السؤال</button>
           <button id="changeSettingsBtn" class="btn-secondary">تغيير الإعدادات</button>
@@ -177,14 +100,19 @@
       </div>
     </section>
 
+    <section id="studentScreen" hidden>
+      <div class="card game-card">
+        <div class="game-header"><h2 class="card-title">كمّل الآية</h2>
+          <div class="score-board"><span id="scoreDisplay">النقاط: 0</span><span id="streakDisplay">متتالية: 0 🔥</span></div></div>
+        <div class="question-area"><p id="studentSurahHint" class="surah-hint"></p><p id="studentQuestionText" class="game-question"></p></div>
+        <div id="optionsGrid" class="options-grid"></div>
+        <div id="resultMsg" class="result-msg" hidden></div>
+      </div>
+    </section>
   </main>
 
-  <footer class="foot">
-    <span>المرحلة ١ · شاشة المعلم</span>
-    <span id="verTag">يعمل أوفلاين</span>
-  </footer>
+  <footer class="foot"><span>يعمل أوفلاين · مركز معاوية</span><span id="verTag">v3</span></footer>
 
-  <!-- مكتبة قراءة الإكسل داخل المتصفح (تُكاش للعمل أوفلاين) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script type="module" src="./js/app.js"></script>
 </body>
