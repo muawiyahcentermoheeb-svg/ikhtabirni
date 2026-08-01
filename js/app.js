@@ -1,9 +1,8 @@
 // ============================================================
 //  اختبرني — الرابط الرئيسي المتين
-//  • البدء يُظهر شاشةً دائماً (لا فراغ بعد اليوم)
-//  • وحدة الطالب تُحمّل عند الحاجة فقط (لا تُسقط التطبيق إن تعذّرت)
-//  • بطاقة خطأ مرئية بدل الشاشة الفارغة الصامتة
-//  • إشعار تحديث عامل الخدمة + إعادة تحميل آمنة عند التحديث
+//  • شاشة الترحيب تُخفى باحتياطاتٍ زمنيةٍ مستقلّة (لا تعلّق أوفلاين)
+//  • وحدة الطالب تُحمّل عند الحاجة فقط
+//  • بطاقة خطأ مرئية بدل الفراغ الصامت
 // ============================================================
 import * as db from './db.js';
 import { parseFile } from './importer.js';
@@ -17,7 +16,7 @@ const fileInput = $('fileInput'), prog = $('importProgress'),
 
 let current = 'home';
 
-/* ---------- وحدة الطالب: تحميل كسول (lazy) ---------- */
+/* ---------- وحدة الطالب: تحميل كسول ---------- */
 let studentMod = null;
 async function loadStudent() {
   if (studentMod) return studentMod;
@@ -25,7 +24,19 @@ async function loadStudent() {
   return studentMod;
 }
 
-/* ---------- بطاقة خطأ مرئية (بديل الفراغ) ---------- */
+/* ---------- شاشة الترحيب + احتياطات الإخفاء ---------- */
+function hideSplash() {
+  const sp = $('splashOverlay'); if (!sp) return;
+  sp.classList.add('hide');
+  setTimeout(() => sp.remove(), 700);
+}
+// مضمونٌ بعدّة مؤقّتاتٍ مستقلّة — يمنع تعليق الشعار أوفلاين مهما تعثّر أي حدث
+setTimeout(hideSplash, 3000);
+setTimeout(() => { const sp = $('splashOverlay'); if (sp && !sp.classList.contains('hide')) hideSplash(); }, 5200);
+window.addEventListener('load', () => setTimeout(hideSplash, 1200));
+document.addEventListener('DOMContentLoaded', () => setTimeout(hideSplash, 1200));
+
+/* ---------- بطاقة خطأ مرئية ---------- */
 function fatal(msg) {
   let box = $('bootError');
   if (!box) {
@@ -57,13 +68,6 @@ function showUpdateToast() {
     try { navigator.serviceWorker.controller && navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {}
     t.remove();
   };
-}
-
-/* ---------- شاشة الترحيب ---------- */
-function hideSplash() {
-  const sp = $('splashOverlay'); if (!sp) return;
-  sp.classList.add('hide');
-  setTimeout(() => sp.remove(), 700);
 }
 
 /* ---------- شارة الاتصال ---------- */
@@ -111,13 +115,8 @@ async function showScreen(name) {
     if (name === 'teacher-question') teacher.showQuestion(); else teacher.showSettings();
   }
   if (name === 'student') {
-    try {
-      const m = await loadStudent();
-      await m.enterStudent();
-    } catch (e) {
-      studentScreen.hidden = true; homeScreen.hidden = false; current = 'home';
-      alert('تعذّر تحميل ألعاب الطالب: ' + (e && e.message ? e.message : e));
-    }
+    try { const m = await loadStudent(); await m.enterStudent(); }
+    catch (e) { studentScreen.hidden = true; homeScreen.hidden = false; current = 'home'; alert('تعذّر تحميل مسابقات الطالب: ' + (e && e.message ? e.message : e)); }
   }
   backBtn.hidden = (name === 'home' || name === 'import');
 }
@@ -154,25 +153,18 @@ fileInput.addEventListener('change', async (e) => {
     const { verses, surahs, stats } = await parseFile(file);
     progMsg.textContent = `جارٍ حفظ ${verses.length} آية محلياً…`;
     await db.saveAll(verses, surahs, stats);
-    prog.hidden = true;
-    renderHome(stats);
-    showScreen('home');
-  } catch (err) {
-    prog.hidden = true; errBox.hidden = false;
-    errBox.textContent = 'خطأ: ' + (err && err.message ? err.message : err);
-  } finally { fileInput.value = ''; }
+    prog.hidden = true; renderHome(stats); showScreen('home');
+  } catch (err) { prog.hidden = true; errBox.hidden = false; errBox.textContent = 'خطأ: ' + (err && err.message ? err.message : err); }
+  finally { fileInput.value = ''; }
 });
 $('reimportBtn').addEventListener('click', async () => {
   if (!confirm('سيُمسح ما حُفظ محلياً وتعود لشاشة تحميل الملف. متابعة؟')) return;
-  await db.clearAll();
-  showScreen('import');
+  await db.clearAll(); showScreen('import');
 });
 
-/* ---------- التثبيت كتطبيق مستقل ---------- */
+/* ---------- التثبيت ---------- */
 let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault(); deferredPrompt = e; $('installBtn').hidden = false;
-});
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; $('installBtn').hidden = false; });
 $('installBtn').addEventListener('click', async () => {
   if (!deferredPrompt) return;
   deferredPrompt.prompt();
@@ -189,11 +181,8 @@ document.querySelectorAll('.feature-card').forEach((c) => c.addEventListener('cl
 /* ---------- منطق المعلم ---------- */
 function readSettings() {
   const rangeType = $('rangeType').value;
-  const from = rangeType === 'surah' ? parseInt($('fromSurah').value)
-             : rangeType === 'juz'   ? parseInt($('fromJuz').value)
-             : parseInt($('singleSurahSelect').value);
-  const to   = rangeType === 'surah' ? parseInt($('toSurah').value)
-             : rangeType === 'juz'   ? parseInt($('toJuz').value) : from;
+  const from = rangeType === 'surah' ? parseInt($('fromSurah').value) : rangeType === 'juz' ? parseInt($('fromJuz').value) : parseInt($('singleSurahSelect').value);
+  const to = rangeType === 'surah' ? parseInt($('toSurah').value) : rangeType === 'juz' ? parseInt($('toJuz').value) : from;
   return {
     rangeType, from, to,
     size: parseInt((document.querySelector('.chip.active[data-size]') || {}).dataset && document.querySelector('.chip.active[data-size]').dataset.size || '7'),
@@ -203,12 +192,8 @@ function readSettings() {
 }
 $('generateBtn').addEventListener('click', async () => {
   const settings = readSettings();
-  try {
-    const verses = await teacher.generateQuestion(settings);
-    teacher.displayQuestion(verses);
-    teacher.saveSettings(settings);
-    showScreen('teacher-question');
-  } catch (err) { alert(err && err.message ? err.message : err); }
+  try { const verses = await teacher.generateQuestion(settings); teacher.displayQuestion(verses); teacher.saveSettings(settings); showScreen('teacher-question'); }
+  catch (err) { alert(err && err.message ? err.message : err); }
 });
 $('changeSettingsBtn').addEventListener('click', () => showScreen('teacher-settings'));
 $('changeQuestionBtn').addEventListener('click', async () => {
@@ -219,8 +204,7 @@ $('changeQuestionBtn').addEventListener('click', async () => {
 
 /* ---------- الشرائح + نوع النطاق ---------- */
 document.querySelectorAll('.chip').forEach((chip) => chip.addEventListener('click', () => {
-  chip.parentElement.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
-  chip.classList.add('active');
+  chip.parentElement.querySelectorAll('.chip').forEach((c) => c.classList.remove('active')); chip.classList.add('active');
 }));
 $('rangeType').addEventListener('change', (e) => teacher.toggleRange(e.target.value));
 
@@ -228,21 +212,11 @@ $('rangeType').addEventListener('change', (e) => teacher.toggleRange(e.target.va
 (async () => {
   try {
     const ready = await db.isReady();
-    if (ready) {
-      const stats = await db.getStats();
-      if (stats) { renderHome(stats); current = 'home'; }
-      else { current = 'import'; }
-    } else {
-      current = 'import';
-    }
-    // إظهار الشاشة المختارة صراحةً — هذا ما كان ينقص
+    if (ready) { const stats = await db.getStats(); current = stats ? 'home' : 'import'; if (stats) renderHome(stats); }
+    else { current = 'import'; }
     importScreen.hidden  = current !== 'import';
     homeScreen.hidden    = current !== 'home';
-    teacherScreen.hidden = true;
-    studentScreen.hidden = true;
-    backBtn.hidden = true;
-  } catch (e) {
-    fatal(e && e.message ? e.message : String(e));
-  }
+    teacherScreen.hidden = true; studentScreen.hidden = true; backBtn.hidden = true;
+  } catch (e) { fatal(e && e.message ? e.message : String(e)); }
   setTimeout(hideSplash, 3000);
 })();
