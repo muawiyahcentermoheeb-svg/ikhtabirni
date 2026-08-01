@@ -1,16 +1,17 @@
-/* عامل الخدمة v7 — أوفلاين مطلق + تحديث قسري
-   غيّر VER مع كل نشر ليصل التحديث للمستخدمين */
-const VER = 'ikhtabirni-v7';
+/* عامل الخدمة v8 — أوفلاين مطلق + تحديث قسري + كاش البيانات المضمّنة
+   غيّر VER مع كل نشر ليصل التحديث للمستخدمين والأجهزة المثبّتة */
+const VER = 'ikhtabirni-v8';
 const CORE = VER + '-core', CDN = VER + '-cdn', FONT = VER + '-font';
 
 const PRECACHE = [
   './', './index.html', './manifest.webmanifest', './css/style.css',
   './js/app.js', './js/db.js', './js/importer.js',
   './js/teacher.js', './js/student.js', './js/constants.js',
-  './assets/logo.png'
+  './assets/logo.png',
+  './data/quran.json'   /* البيانات المضمّنة — تُضاف بأمان إن وُجدت */
 ];
 
-/* إضافة آمنة: ملفٌ فاشل لا يُسقط البقية (يحمي التثبيت) */
+/* إضافة آمنة: ملفٌ فاشل/غائب لا يُسقط البقية (يحمي التثبيت قبل رفع quran.json) */
 function addSafe(cache, urls) {
   return Promise.all(urls.map((u) => cache.add(u).catch(() => {})));
 }
@@ -54,7 +55,7 @@ self.addEventListener('fetch', (e) => {
     );
     return;
   }
-  // أصول نفس الأصل الثابتة: كاش أولاً = أوفلاين مطلق
+  // أصول نفس الأصل الثابتة (بما فيها data/quran.json بعد رفعه): كاش أولاً = أوفلاين مطلق
   if (u.origin === self.location.origin) { e.respondWith(cacheFirst(r, CORE)); return; }
   // الباقي (تلاوات خارجية): شبكة ثم كاش
   e.respondWith(staleWhileRevalidate(r, CDN));
