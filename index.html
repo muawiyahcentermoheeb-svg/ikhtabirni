@@ -84,7 +84,7 @@
             </svg>
           </span>
           <span class="fc-title">اختبرني — للطالب</span>
-          <span class="fc-desc">الألعاب والتحفيز</span>
+          <span class="fc-desc">المسابقات والتحفيز</span>
         </button>
       </div>
       <div class="card manage-card">
@@ -134,12 +134,12 @@
         <div id="studentSingleSurah" class="setting-group" hidden><label>السورة:</label><select id="studentSingleSelect"></select></div>
         <div class="setting-group"><label>المستوى:</label>
           <div class="chips"><button class="chip active" data-slevel="الكل">الكل</button><button class="chip" data-slevel="سهل">سهل</button><button class="chip" data-slevel="متوسط">متوسط</button><button class="chip" data-slevel="صعب">صعب</button></div></div>
-        <button id="studentStartBtn" class="btn-primary">ابدأ اللعب</button>
+        <button id="studentStartBtn" class="btn-primary">ابدأ المسابقة</button>
       </div>
 
-      <!-- ٢) قائمة الألعاب الخمس -->
+      <!-- ٢) قائمة المسابقات الخمس -->
       <div id="gamesMenu" class="card" hidden>
-        <h2 class="card-title">اختر لعبة</h2>
+        <h2 class="card-title">اختر مسابقة</h2>
         <div class="games-menu">
           <button class="game-pick" data-game="complete"><span class="gp-t">كمّل الآية</span><span class="gp-d">اختر التكملة الصحيحة للآية</span></button>
           <button class="game-pick" data-game="order"><span class="gp-t">رتّب الكلمات</span><span class="gp-d">اضغط الكلمات بترتيبها الصحيح</span></button>
@@ -150,8 +150,8 @@
         <div class="question-actions"><button id="changeStudentRangeBtn" class="btn-secondary">تغيير النطاق</button></div>
       </div>
 
-      <!-- ٣) منطقة اللعب (ظاهرة الآن لتبقى اللعبة الحالية عاملة حتى تُفعَّل القائمة) -->
-      <div id="gameArea" class="card game-card">
+      <!-- ٣) منطقة اللعب -->
+      <div id="gameArea" class="card game-card" hidden>
         <div class="game-header"><h2 id="gameTitle" class="card-title">كمّل الآية</h2>
           <div class="score-board"><span id="scoreDisplay">النقاط: 0</span><span id="streakDisplay">متتالية: 0 🔥</span></div></div>
         <div class="question-area"><p id="studentSurahHint" class="surah-hint"></p><p id="studentQuestionText" class="game-question"></p></div>
@@ -165,7 +165,7 @@
     </section>
   </main>
 
-  <footer class="foot"><span>يعمل أوفلاين · مركز معاوية لتحفيظ القرآن الكريم</span><span id="verTag">v5</span></footer>
+  <footer class="foot"><span>يعمل أوفلاين · مركز معاوية لتحفيظ القرآن الكريم</span><span id="verTag">v7</span></footer>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script type="module" src="./js/app.js"></script>
