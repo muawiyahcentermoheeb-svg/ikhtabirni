@@ -1,6 +1,6 @@
-/* عامل الخدمة v6 — أوفلاين مطلق + تحديث قسري
+/* عامل الخدمة v7 — أوفلاين مطلق + تحديث قسري
    غيّر VER مع كل نشر ليصل التحديث للمستخدمين */
-const VER = 'ikhtabirni-v6';
+const VER = 'ikhtabirni-v7';
 const CORE = VER + '-core', CDN = VER + '-cdn', FONT = VER + '-font';
 
 const PRECACHE = [
