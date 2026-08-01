@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#05080d" />
-  <title>اختبرني · مركز معاوية</title>
+  <title>اختبرني · مركز معاوية لتحفيظ القرآن الكريم</title>
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" type="image/png" href="./assets/logo.png" />
   <link rel="apple-touch-icon" href="./assets/logo.png" />
@@ -19,9 +19,9 @@
   <div id="splashOverlay" class="splash">
     <div class="splash-glow"></div>
     <div class="splash-ring"></div>
-    <img class="splash-logo" src="./assets/logo.png" alt="شعار مركز معاوية" />
+    <img class="splash-logo" src="./assets/logo.png" alt="شعار مركز معاوية لتحفيظ القرآن الكريم" />
     <h1 class="splash-title">اختبرني</h1>
-    <p class="splash-sub">مركز معاوية لتحفيظ القرآن</p>
+    <p class="splash-sub">مركز معاوية لتحفيظ القرآن الكريم</p>
     <div class="splash-dots"><i></i><i></i><i></i></div>
   </div>
 
@@ -39,13 +39,14 @@
       <img class="brand-logo" src="./assets/logo.png" alt="" />
       <div>
         <h1 class="brand-name">اختبرني</h1>
-        <p class="brand-sub">مركز معاوية لتحفيظ القرآن</p>
+        <p class="brand-sub">مركز معاوية لتحفيظ القرآن الكريم</p>
       </div>
     </div>
     <span id="netBadge" class="net-badge">—</span>
   </header>
 
   <main class="shell">
+    <!-- الاستيراد -->
     <section id="importScreen" class="card" hidden>
       <h2 class="card-title">تحميل بيانات المصحف</h2>
       <p class="muted">يعمل التطبيق بالكامل دون إنترنت. اختر ملف التصنيف من جهازك ليُقرأ محلياً.</p>
@@ -55,6 +56,7 @@
       <div id="importError" class="error" hidden></div>
     </section>
 
+    <!-- الرئيسية -->
     <section id="homeScreen" hidden>
       <div class="card stats-card">
         <h2 class="card-title">تم بناء قاعدة البيانات بنجاح ✅</h2>
@@ -62,10 +64,27 @@
       </div>
       <div class="cards-row">
         <button class="feature-card teacher" data-go="teacher">
-          <span class="fc-icon">👨‍🏫</span><span class="fc-title">اختبرني — للمعلم</span><span class="fc-desc">تحضير الأسئلة بشكل الصفحة</span>
+          <span class="fc-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M24 13 C19 9 11 9 6 11 V37 C11 35 19 35 24 39 C29 35 37 35 42 37 V11 C37 9 29 9 24 13 Z"/>
+              <path d="M24 13 V39"/>
+              <path d="M11 17 H18 M11 22 H18 M11 27 H16" stroke-width="1.4"/>
+              <path d="M30 17 H37 M30 22 H37 M32 27 H37" stroke-width="1.4"/>
+            </svg>
+          </span>
+          <span class="fc-title">اختبرني — للمعلم</span>
+          <span class="fc-desc">تحضير الأسئلة بشكل الصفحة</span>
         </button>
         <button class="feature-card student" data-go="student">
-          <span class="fc-icon">🎮</span><span class="fc-title">اختبرني — للطالب</span><span class="fc-desc">الألعاب والتحفيز</span>
+          <span class="fc-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+              <rect x="9" y="9" width="30" height="30" rx="4"/>
+              <rect x="9" y="9" width="30" height="30" rx="4" transform="rotate(45 24 24)"/>
+              <circle cx="24" cy="24" r="4.5" fill="currentColor" stroke="none"/>
+            </svg>
+          </span>
+          <span class="fc-title">اختبرني — للطالب</span>
+          <span class="fc-desc">الألعاب والتحفيز</span>
         </button>
       </div>
       <div class="card manage-card">
@@ -74,6 +93,7 @@
       </div>
     </section>
 
+    <!-- المعلم -->
     <section id="teacherScreen" hidden>
       <div id="settingsPanel" class="card">
         <h2 class="card-title">إعدادات الاختبار</h2>
@@ -100,18 +120,52 @@
       </div>
     </section>
 
+    <!-- الطالب -->
     <section id="studentScreen" hidden>
-      <div class="card game-card">
-        <div class="game-header"><h2 class="card-title">كمّل الآية</h2>
+
+      <!-- ١) اختيار النطاق/الحفظ قبل اللعب -->
+      <div id="studentSetup" class="card" hidden>
+        <h2 class="card-title">حدّد حفظك</h2>
+        <p class="muted">ستُسحب الأسئلة من هذا النطاق فقط.</p>
+        <div class="setting-group"><label>نوع النطاق:</label>
+          <select id="studentRangeType"><option value="surah">من سورة إلى سورة</option><option value="juz">من جزء إلى جزء</option><option value="single">سورة واحدة</option><option value="all">كل القرآن</option></select></div>
+        <div id="studentSurahRange" class="setting-group row2"><label>من:</label><select id="studentFromSurah"></select><label>إلى:</label><select id="studentToSurah"></select></div>
+        <div id="studentJuzRange" class="setting-group row2" hidden><label>من:</label><select id="studentFromJuz"></select><label>إلى:</label><select id="studentToJuz"></select></div>
+        <div id="studentSingleSurah" class="setting-group" hidden><label>السورة:</label><select id="studentSingleSelect"></select></div>
+        <div class="setting-group"><label>المستوى:</label>
+          <div class="chips"><button class="chip active" data-slevel="الكل">الكل</button><button class="chip" data-slevel="سهل">سهل</button><button class="chip" data-slevel="متوسط">متوسط</button><button class="chip" data-slevel="صعب">صعب</button></div></div>
+        <button id="studentStartBtn" class="btn-primary">ابدأ اللعب</button>
+      </div>
+
+      <!-- ٢) قائمة الألعاب الخمس -->
+      <div id="gamesMenu" class="card" hidden>
+        <h2 class="card-title">اختر لعبة</h2>
+        <div class="games-menu">
+          <button class="game-pick" data-game="complete"><span class="gp-t">كمّل الآية</span><span class="gp-d">اختر التكملة الصحيحة للآية</span></button>
+          <button class="game-pick" data-game="order"><span class="gp-t">رتّب الكلمات</span><span class="gp-d">اضغط الكلمات بترتيبها الصحيح</span></button>
+          <button class="game-pick" data-game="hidden"><span class="gp-t">خمّن الكلمة المخفية</span><span class="gp-d">استخرج الكلمة المحجوبة من سياقها</span></button>
+          <button class="game-pick" data-game="surah"><span class="gp-t">إيه السورة دي؟</span><span class="gp-d">اعرف السورة من مقطع قصير</span></button>
+          <button class="game-pick" data-game="listen"><span class="gp-t">استمع وميّز</span><span class="gp-d">اسمع الآية واختر نصّها الصحيح</span></button>
+        </div>
+        <div class="question-actions"><button id="changeStudentRangeBtn" class="btn-secondary">تغيير النطاق</button></div>
+      </div>
+
+      <!-- ٣) منطقة اللعب (ظاهرة الآن لتبقى اللعبة الحالية عاملة حتى تُفعَّل القائمة) -->
+      <div id="gameArea" class="card game-card">
+        <div class="game-header"><h2 id="gameTitle" class="card-title">كمّل الآية</h2>
           <div class="score-board"><span id="scoreDisplay">النقاط: 0</span><span id="streakDisplay">متتالية: 0 🔥</span></div></div>
         <div class="question-area"><p id="studentSurahHint" class="surah-hint"></p><p id="studentQuestionText" class="game-question"></p></div>
+        <div id="audioWrap" class="audio-wrap" hidden><button id="audioBtn" class="btn-primary">🔊 استمع للآية</button></div>
+        <div id="answerZone" class="answer-zone" hidden></div>
+        <div id="wordsZone" class="words-zone" hidden></div>
         <div id="optionsGrid" class="options-grid"></div>
         <div id="resultMsg" class="result-msg" hidden></div>
+        <div class="question-actions"><button id="gameMenuBtn" class="btn-secondary">القائمة</button><button id="gameNextBtn" class="btn-secondary">سؤال آخر</button></div>
       </div>
     </section>
   </main>
 
-  <footer class="foot"><span>يعمل أوفلاين · مركز معاوية</span><span id="verTag">v3</span></footer>
+  <footer class="foot"><span>يعمل أوفلاين · مركز معاوية لتحفيظ القرآن الكريم</span><span id="verTag">v5</span></footer>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script type="module" src="./js/app.js"></script>
