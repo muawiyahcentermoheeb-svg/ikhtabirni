@@ -1,15 +1,20 @@
-// يقرأ ملف الإكسل/CSV داخل المتصفح ويبني الجداول — لا بيانات وهمية
+// ============================================================
+//  importer.js  —  قراءة البيانات من مصدرين + تصديرها
+//  • parseFile(file)        : يقرأ الإكسل/CSV ويبني الجداول (كما نجح)
+//  • loadEmbedded()         : يقرأ data/quran.json المضمَّن إن وُجد
+//  • downloadJSON(obj,name) : يُنزّل كائناً كملف JSON (للتصدير)
+//  لا بيانات وهمية — كل شيء من ملفك أو مما بُني منه حرفياً
+// ============================================================
 import { SURAH_NAMES, DIFFICULTIES } from './constants.js';
 
 const norm = (s) => String(s ?? '').replace(/\s+/g, '').toLowerCase();
 
-// جدول حدود الأجزاء (صفحة البداية لكل جزء في المصحف)
+// حدود بداية كل جزء برقم الصفحة (ثابتٌ معروفٌ لمصحف المدينة)
 const JUZ_PAGE_STARTS = [
   1, 22, 42, 62, 82, 102, 121, 142, 162, 182,
   201, 222, 242, 262, 282, 302, 322, 342, 362, 382,
   402, 422, 442, 462, 482, 502, 522, 542, 562, 582
 ];
-
 function getJuzFromPage(pageNo) {
   for (let i = JUZ_PAGE_STARTS.length - 1; i >= 0; i--) {
     if (pageNo >= JUZ_PAGE_STARTS[i]) return i + 1;
@@ -56,8 +61,11 @@ function extractNumberFromId(id) {
   return m ? parseInt(m[1], 10) : 0;
 }
 
+// ---------- ١) قراءة الإكسل/CSV ----------
 export async function parseFile(file) {
-  if (typeof window.XLSX === 'undefined') throw new Error('تعذّر تحميل أداة قراءة الإكسل. تأكد من الاتصال مرة واحدة ثم أعد المحاولة.');
+  if (typeof window.XLSX === 'undefined') {
+    throw new Error('تعذّر تحميل أداة قراءة الإكسل. تأكد من الاتصال مرةً واحدة ثم أعد المحاولة.');
+  }
   const buf = await file.arrayBuffer();
   const wb = window.XLSX.read(buf, { type: 'array' });
   const ws = wb.Sheets[wb.SheetNames[0]];
@@ -69,7 +77,9 @@ export async function parseFile(file) {
   const dataRows = rows.slice(hi + 1).filter((r) => r && r.some((c) => String(c).trim() !== ''));
   const col = detectCols(header, dataRows[0]);
 
-  if (col.text < 0 || col.origOrder < 0) throw new Error('تعذّر التعرف على أعمدة النص والترتيب في الملف.');
+  if (col.text < 0 || col.origOrder < 0) {
+    throw new Error('تعذّر التعرف على أعمدة النص والترتيب في الملف.');
+  }
 
   let verses = [];
   for (const r of dataRows) {
@@ -77,13 +87,13 @@ export async function parseFile(file) {
     if (!Number.isFinite(origOrder)) continue;
     const text = String(r[col.text] ?? '').trim();
     if (!text) continue;
-    
+
     const pageNo = parseInt(r[col.page], 10) || 0;
     const juzOriginal = getJuzFromPage(pageNo);
     const juzReverse = 31 - juzOriginal;
     const surahOrigNumber = extractNumberFromId(r[col.surahId]);
     const surahRevOrder = parseInt(r[col.surahRev], 10) || 0;
-    
+
     verses.push({
       origOrder,
       text,
@@ -99,7 +109,6 @@ export async function parseFile(file) {
       difficulty: col.difficulty >= 0 ? String(r[col.difficulty] ?? '').trim() : 'سهل',
     });
   }
-  
   if (!verses.length) throw new Error('لم تُستخرج آيات صالحة من الملف.');
   verses.sort((a, b) => a.origOrder - b.origOrder);
 
@@ -118,9 +127,7 @@ export async function parseFile(file) {
   const surahs = [...surahAgg.values()].sort((a, b) => a.revOrder - b.revOrder);
 
   const diff = { سهل: 0, متوسط: 0, صعب: 0, unknown: 0 };
-  for (const v of verses) {
-    diff[DIFFICULTIES.includes(v.difficulty) ? v.difficulty : 'unknown']++;
-  }
+  for (const v of verses) diff[DIFFICULTIES.includes(v.difficulty) ? v.difficulty : 'unknown']++;
   const warnings = [];
   if (diff.unknown) warnings.push(`يوجد ${diff.unknown} آية بمستوى صعوبة غير معروف.`);
 
@@ -138,4 +145,32 @@ export async function parseFile(file) {
   };
 
   return { verses, surahs, stats };
+}
+
+// ---------- ٢) قراءة البيانات المضمّنة (data/quran.json) ----------
+// يُرجع {verses, surahs, stats} إن وُجد الملف وصحّ، وإلا null (بلا خطأ)
+export async function loadEmbedded() {
+  try {
+    const res = await fetch('./data/quran.json', { cache: 'no-cache' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data || !Array.isArray(data.verses) || !data.verses.length) return null;
+    if (!Array.isArray(data.surahs) || !data.stats) return null;
+    return { verses: data.verses, surahs: data.surahs, stats: data.stats };
+  } catch (e) {
+    return null; // الملف غير موجود بعد — هذا متوقع قبل التصدير الأول
+  }
+}
+
+// ---------- ٣) تنزيل كائن كملف JSON (للتصدير) ----------
+export function downloadJSON(obj, filename) {
+  const json = JSON.stringify(obj);
+  const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'quran.json';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
 }
