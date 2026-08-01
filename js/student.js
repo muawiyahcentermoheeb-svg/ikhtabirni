@@ -1,6 +1,7 @@
 // ============================================================
-//  اختبرني — للطالب  |  الألعاب الخمس + نطاق الحفظ + التحفيز
-//  كل الأحداث الداخلية مربوطة هنا. app.js يستدعي enterStudent() فقط.
+//  اختبرني — مسابقات الطالب  |  ٥ مسابقات + نطاق الحفظ + عدم التكرار
+//  • «كيس دون تكرار»: لا يُعاد سؤالٌ حتى تُستنفد آيات النطاق كلّها
+//  • النصوص محتشمة: «مسابقات» لا «ألعاب»
 // ============================================================
 import * as db from './db.js';
 
@@ -9,16 +10,18 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const shuffle = (a) => { const x = a.slice(); for (let i = x.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[x[i], x[j]] = [x[j], x[i]]; } return x; };
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const wordsOf = (t) => t.split(/\s+/).filter(Boolean);
+const hasLongWord = (v) => wordsOf(v.text).some((w) => w.replace(/[^\u0600-\u06FF]/g, '').length >= 4);
 
 const AUDIO = (n) => `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${n}.mp3`;
 
 // ---------- الحالة ----------
-let pool = [];                 // الآيات المتاحة حسب نطاق الطالب
-let allSurahNames = [];        // كل أسماء السور (للعبة "إيه السورة دي")
+let pool = [];
+let allSurahNames = [];
 let currentGame = 'complete';
-let current = null;            // بيانات السؤال الحالي
+let current = null;
 let audio = null;
 let progress = { score: 0, streak: 0, best: 0 };
+const bags = {}; // bags[game] = [origOrder...] المتبقي (كيس دون تكرار)
 
 const GAMES = {
   complete: 'كمّل الآية',
@@ -28,7 +31,28 @@ const GAMES = {
   listen: 'استمع وميّز',
 };
 
-// ---------- إظهار المناطق الثلاث ----------
+// ---------- كيس دون تكرار ----------
+function refillBag(key, filterFn) {
+  let arr = pool.slice();
+  if (filterFn) arr = arr.filter(filterFn);
+  arr = shuffle(arr);
+  bags[key] = arr.map((v) => v.origOrder);
+}
+function drawVerse(key, filterFn) {
+  if (!bags[key] || !bags[key].length) refillBag(key, filterFn);
+  if (!bags[key] || !bags[key].length) return null; // لا آية مطابقة أصلاً
+  const orig = bags[key].pop();
+  return pool.find((v) => v.origOrder === orig) || null;
+}
+function noContent() {
+  $('studentSurahHint').textContent = '';
+  $('studentQuestionText').textContent = 'لا توجد آيات مطابقة لهذه المسابقة في النطاق المختار. وسّع النطاق أو اختر «الكل».';
+  $('optionsGrid').innerHTML = '';
+  $('answerZone').hidden = true; $('wordsZone').hidden = true; $('audioWrap').hidden = true;
+  const m = $('resultMsg'); m.hidden = true; m.textContent = '';
+}
+
+// ---------- المناطق ----------
 function showView(name) {
   $('studentSetup').hidden = name !== 'setup';
   $('gamesMenu').hidden = name !== 'menu';
@@ -42,14 +66,13 @@ function loadProgress() {
 }
 function saveProgress() { localStorage.setItem('ikhtabirni_progress', JSON.stringify(progress)); }
 function paintScore() { $('scoreDisplay').textContent = `النقاط: ${progress.score}`; $('streakDisplay').textContent = `متتالية: ${progress.streak} 🔥`; }
-
 function reward(ok) {
   if (ok) { progress.score += 10; progress.streak++; progress.best = Math.max(progress.best, progress.streak); }
   else { progress.streak = 0; }
   saveProgress(); paintScore();
 }
 
-// ---------- الدخول لشاشة الطالب ----------
+// ---------- الدخول ----------
 export async function enterStudent() {
   loadProgress(); paintScore();
   const surahs = await db.getSurahsByReverse();
@@ -62,14 +85,13 @@ export async function enterStudent() {
   $('studentToJuz').innerHTML = $('studentFromJuz').innerHTML;
   showView('setup');
 }
-
 export function toggleStudentRange(val) {
   $('studentSurahRange').hidden = val !== 'surah';
   $('studentJuzRange').hidden = val !== 'juz';
   $('studentSingleSurah').hidden = val !== 'single';
 }
 
-// ---------- بناء النطاق ثم عرض قائمة الألعاب ----------
+// ---------- بناء النطاق ----------
 export async function startStudent() {
   const type = $('studentRangeType').value;
   let verses = [];
@@ -83,20 +105,19 @@ export async function startStudent() {
 
   if (!verses.length) { alert('لا توجد آيات في هذا النطاق/المستوى. وسّع النطاق أو غيّر المستوى.'); return; }
   pool = verses;
+  Object.keys(bags).forEach((k) => delete bags[k]); // أكياس جديدة لكل نطاق
   showView('menu');
 }
-
 export function showGamesMenu() { stopAudio(); showView('menu'); }
 export function showStudentSetup() { stopAudio(); showView('setup'); }
 
-// ---------- تشغيل لعبة ----------
+// ---------- تشغيل مسابقة ----------
 export function pickGame(key) {
   currentGame = key;
-  $('gameTitle').textContent = GAMES[key] || 'لعبة';
+  $('gameTitle').textContent = GAMES[key] || 'مسابقة';
   showView('play');
   nextQuestion();
 }
-
 export function nextQuestion() {
   stopAudio();
   $('resultMsg').hidden = true;
@@ -106,7 +127,6 @@ export function nextQuestion() {
   $('audioWrap').hidden = true;
   $('studentSurahHint').textContent = '';
   $('studentQuestionText').textContent = '';
-
   if (currentGame === 'complete') buildComplete();
   else if (currentGame === 'order') buildOrder();
   else if (currentGame === 'hidden') buildHidden();
@@ -122,7 +142,6 @@ function finish(ok, correctText) {
   else { msg.textContent = '❌ الصواب: ' + correctText; msg.className = 'result-msg error'; }
   document.querySelectorAll('.option-btn').forEach((b) => (b.disabled = true));
 }
-
 function optionButtons(choices, onPick) {
   const grid = $('optionsGrid'); grid.innerHTML = '';
   choices.forEach((c) => {
@@ -133,42 +152,37 @@ function optionButtons(choices, onPick) {
   });
 }
 
-// ============================================================
-//  ١) كمّل الآية
-// ============================================================
+// ============================================================ ١) كمّل الآية
 function buildComplete() {
-  const v = pick(pool);
+  const v = drawVerse('complete', (vv) => wordsOf(vv.text).length >= 3);
+  if (!v) { noContent(); return; }
   const w = wordsOf(v.text);
-  if (w.length < 3) return nextQuestion();
   const split = Math.max(1, Math.floor(w.length * 0.6));
   const head = w.slice(0, split).join(' ');
   const tail = w.slice(split).join(' ');
   $('studentSurahHint').textContent = `سورة ${v.surahName}`;
   $('studentQuestionText').textContent = head + ' …';
-
-  const wrongs = shuffle(pool.filter((x) => x.origOrder !== v.origOrder)).slice(0, 3)
+  const wrongs = shuffle(pool.filter((x) => x.origOrder !== v.origOrder)).slice(0, 6)
     .map((x) => { const ww = wordsOf(x.text); const s = Math.max(1, Math.floor(ww.length * 0.6)); return ww.slice(s).join(' '); })
     .filter((t) => t && t !== tail);
-  while (wrongs.length < 3) wrongs.push('…');
-  optionButtons(shuffle([{ text: tail, ok: true }, ...wrongs.slice(0, 3).map((t) => ({ text: t, ok: false }))]),
+  const uniqW = [...new Set(wrongs)].slice(0, 3);
+  while (uniqW.length < 3) uniqW.push('…');
+  optionButtons(shuffle([{ text: tail, ok: true }, ...uniqW.map((t) => ({ text: t, ok: false }))]),
     (c, b) => {
       if (c.ok) { b.classList.add('correct'); finish(true, tail); }
       else { b.classList.add('wrong'); document.querySelectorAll('.option-btn').forEach((x) => { if (x.textContent === tail) x.classList.add('correct'); }); finish(false, tail); }
     });
 }
 
-// ============================================================
-//  ٢) رتّب الكلمات  (نقر ينقل ↔ منطقة الإجابة)
-// ============================================================
+// ============================================================ ٢) رتّب الكلمات
 function buildOrder() {
-  const v = pick(pool);
+  const v = drawVerse('order', (vv) => wordsOf(vv.text).length >= 2);
+  if (!v) { noContent(); return; }
   const correct = wordsOf(v.text);
-  if (correct.length < 2) return nextQuestion();
   $('studentSurahHint').textContent = `سورة ${v.surahName} — رتّب بالضغط`;
   $('studentQuestionText').textContent = 'اضغط الكلمات بالترتيب الصحيح:';
   $('answerZone').hidden = false; $('wordsZone').hidden = false;
   const placed = [];
-
   const render = () => {
     const az = $('answerZone'); az.innerHTML = '';
     placed.forEach((word, i) => {
@@ -184,7 +198,6 @@ function buildOrder() {
       wz.appendChild(c);
     });
   };
-
   const check = () => {
     if (placed.length < correct.length) return;
     const ok = placed.every((idx, i) => idx === i);
@@ -195,19 +208,17 @@ function buildOrder() {
   render();
 }
 
-// ============================================================
-//  ٣) خمّن الكلمة المخفية
-// ============================================================
+// ============================================================ ٣) خمّن الكلمة المخفية
 function buildHidden() {
-  const v = pick(pool);
+  const v = drawVerse('hidden', hasLongWord);
+  if (!v) { noContent(); return; }
   const w = wordsOf(v.text);
   const candidates = w.map((x, i) => ({ x, i })).filter((o) => o.x.replace(/[^\u0600-\u06FF]/g, '').length >= 4);
-  if (!candidates.length) return nextQuestion();
+  if (!candidates.length) { noContent(); return; }
   const hidden = pick(candidates);
   const masked = w.map((x, i) => (i === hidden.i ? '▢▢' : x)).join(' ');
   $('studentSurahHint').textContent = `سورة ${v.surahName}`;
   $('studentQuestionText').innerHTML = `<span style="font-family:var(--serif)">${esc(masked)}</span>`;
-
   const wrongs = shuffle(pool.filter((x) => x.origOrder !== v.origOrder))
     .flatMap((x) => wordsOf(x.text)).filter((t) => t.replace(/[^\u0600-\u06FF]/g, '').length >= 4 && t !== hidden.x);
   const uniq = [...new Set(wrongs)].slice(0, 3);
@@ -219,11 +230,10 @@ function buildHidden() {
     });
 }
 
-// ============================================================
-//  ٤) إيه السورة دي؟
-// ============================================================
+// ============================================================ ٤) إيه السورة دي؟
 function buildSurah() {
-  const v = pick(pool);
+  const v = drawVerse('surah', null);
+  if (!v) { noContent(); return; }
   const short = wordsOf(v.text).slice(0, Math.min(8, wordsOf(v.text).length)).join(' ');
   $('studentQuestionText').innerHTML = `<span style="font-family:var(--serif)">${esc(short)} …</span>`;
   const wrongs = shuffle(allSurahNames.filter((n) => n !== v.surahName)).slice(0, 3);
@@ -234,17 +244,15 @@ function buildSurah() {
     });
 }
 
-// ============================================================
-//  ٥) استمع وميّز  (صوت من CDN — يحتاج إنترنت أول مرة)
-// ============================================================
+// ============================================================ ٥) استمع وميّز
 function buildListen() {
-  const v = pick(pool);
+  const v = drawVerse('listen', null);
+  if (!v) { noContent(); return; }
   $('studentSurahHint').textContent = `سورة ${v.surahName} — استمع ثم اختر النص`;
   $('studentQuestionText').textContent = 'اضغط «استمع» ثم اختر الآية الصحيحة:';
   $('audioWrap').hidden = false;
   audio = new Audio(AUDIO(v.origOrder));
   audio.onerror = () => { $('studentQuestionText').textContent = 'تعذّر تحميل الصوت (يحتاج اتصالاً بالإنترنت أول مرة).'; };
-
   const wrongs = shuffle(pool.filter((x) => x.origOrder !== v.origOrder)).slice(0, 2);
   const choices = shuffle([{ text: v.text, ok: true }, ...wrongs.map((x) => ({ text: x.text, ok: false }))]);
   optionButtons(choices, (c, b) => {
@@ -252,12 +260,9 @@ function buildListen() {
     else { b.classList.add('wrong'); document.querySelectorAll('.option-btn').forEach((x) => { if (x.textContent === v.text) x.classList.add('correct'); }); finish(false, wordsOf(v.text).slice(0, 6).join(' ') + ' …'); }
   });
 }
-
 function stopAudio() { if (audio) { try { audio.pause(); audio.currentTime = 0; } catch {} audio = null; } }
 
-// ============================================================
-//  ربط أحداث أزرار الطالب (مرة واحدة عند تحميل الوحدة)
-// ============================================================
+// ============================================================ ربط الأحداث
 $('studentRangeType').addEventListener('change', (e) => toggleStudentRange(e.target.value));
 $('studentStartBtn').addEventListener('click', startStudent);
 $('changeStudentRangeBtn').addEventListener('click', showStudentSetup);
