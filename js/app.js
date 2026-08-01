@@ -1,11 +1,12 @@
 // ============================================================
-//  اختبرني — الرابط الرئيسي المتين
-//  • شاشة الترحيب تُخفى باحتياطاتٍ زمنيةٍ مستقلّة (لا تعلّق أوفلاين)
+//  اختبرني — الرابط الرئيسي  |  بدءٌ حصينٌ لا يعلّق ولا يُفرغ
+//  • الشعار يزول حين يصبح التطبيق جاهزاً فقط (لا مؤقّت أعمى)
+//  • زر «دخول» احتياطي + بطاقة خطأ = لا تعليق أبداً
+//  • يقرأ data/quran.json المضمّن إن وُجد (اكتفاء ذاتي)
 //  • وحدة الطالب تُحمّل عند الحاجة فقط
-//  • بطاقة خطأ مرئية بدل الفراغ الصامت
 // ============================================================
 import * as db from './db.js';
-import { parseFile } from './importer.js';
+import { parseFile, loadEmbedded, downloadJSON } from './importer.js';
 import * as teacher from './teacher.js';
 
 const $ = (id) => document.getElementById(id);
@@ -16,28 +17,52 @@ const fileInput = $('fileInput'), prog = $('importProgress'),
 
 let current = 'home';
 
-/* ---------- وحدة الطالب: تحميل كسول ---------- */
-let studentMod = null;
-async function loadStudent() {
-  if (studentMod) return studentMod;
-  studentMod = await import('./student.js');
-  return studentMod;
+/* ---------- أدوات مساعدة ---------- */
+function withTimeout(promise, ms, fallback) {
+  return new Promise((resolve) => {
+    let done = false;
+    const t = setTimeout(() => { if (!done) { done = true; resolve(fallback); } }, ms);
+    promise.then((v) => { if (!done) { done = true; clearTimeout(t); resolve(v); } },
+                 () => { if (!done) { done = true; clearTimeout(t); resolve(fallback); } });
+  });
 }
 
-/* ---------- شاشة الترحيب + احتياطات الإخفاء ---------- */
+/* ---------- شاشة الترحيب: إخفاءٌ مرتبطٌ بالحالة ---------- */
+function splashStillThere() { const s = $('splashOverlay'); return !!s && !s.classList.contains('hide'); }
 function hideSplash() {
-  const sp = $('splashOverlay'); if (!sp) return;
+  const sp = $('splashOverlay'); if (!sp || sp.classList.contains('hide')) return;
   sp.classList.add('hide');
-  setTimeout(() => sp.remove(), 700);
+  setTimeout(() => { try { sp.remove(); } catch (e) {} }, 700);
 }
-// مضمونٌ بعدّة مؤقّتاتٍ مستقلّة — يمنع تعليق الشعار أوفلاين مهما تعثّر أي حدث
-setTimeout(hideSplash, 3000);
-setTimeout(() => { const sp = $('splashOverlay'); if (sp && !sp.classList.contains('hide')) hideSplash(); }, 5200);
-window.addEventListener('load', () => setTimeout(hideSplash, 1200));
-document.addEventListener('DOMContentLoaded', () => setTimeout(hideSplash, 1200));
+// إن ظهرت شاشةٌ فعلية خلف الشعار ⇒ الشعار يجب أن يزول فوراً
+function ensureSplashGone() {
+  const anyVisible = !importScreen.hidden || !homeScreen.hidden || !teacherScreen.hidden || !studentScreen.hidden;
+  if (anyVisible && splashStillThere()) hideSplash();
+}
+// شبكة أمان: فحصٌ دوريٌّ قصير (لا يعتمد على حدث load الذي قد لا يُطلق بعد «فرض الإيقاف»)
+const splashWatch = setInterval(ensureSplashGone, 250);
+setTimeout(() => clearInterval(splashWatch), 20000);
 
-/* ---------- بطاقة خطأ مرئية ---------- */
+// زر «دخول» احتياطي يُحقن داخل الشعار — طوق النجاة النهائي
+function injectSplashFallback() {
+  const s = $('splashOverlay'); if (!s || s.querySelector('#splashEnter')) return;
+  const b = document.createElement('button');
+  b.id = 'splashEnter';
+  b.textContent = 'دخول';
+  b.style.cssText = 'margin-top:1.4rem;opacity:0;transition:opacity .5s;background:linear-gradient(180deg,#d4af37,#b8902a);color:#1a1305;border:none;padding:.6rem 1.7rem;border-radius:12px;font-weight:800;font-family:inherit;cursor:pointer;pointer-events:none;box-shadow:0 8px 22px rgba(212,175,55,.3)';
+  b.onclick = () => {
+    const anyVisible = !importScreen.hidden || !homeScreen.hidden || !teacherScreen.hidden || !studentScreen.hidden;
+    if (!anyVisible) { importScreen.hidden = false; current = 'import'; backBtn.hidden = true; } // لا فراغ أبداً
+    const sp = $('splashOverlay'); if (sp) { sp.classList.add('hide'); setTimeout(() => { try { sp.remove(); } catch (e) {} }, 300); }
+  };
+  s.appendChild(b);
+  setTimeout(() => { if (splashStillThere()) { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; } }, 4000);
+}
+injectSplashFallback();
+
+/* ---------- بطاقة خطأ مرئية (بديل الفراغ الصامت) ---------- */
 function fatal(msg) {
+  hideSplash();
   let box = $('bootError');
   if (!box) {
     box = document.createElement('div');
@@ -102,6 +127,14 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+/* ---------- وحدة الطالب: تحميل كسول ---------- */
+let studentMod = null;
+async function loadStudent() {
+  if (studentMod) return studentMod;
+  studentMod = await import('./student.js');
+  return studentMod;
+}
+
 /* ---------- إدارة الشاشات ---------- */
 async function showScreen(name) {
   current = name;
@@ -119,6 +152,7 @@ async function showScreen(name) {
     catch (e) { studentScreen.hidden = true; homeScreen.hidden = false; current = 'home'; alert('تعذّر تحميل مسابقات الطالب: ' + (e && e.message ? e.message : e)); }
   }
   backBtn.hidden = (name === 'home' || name === 'import');
+  ensureSplashGone();
 }
 
 /* ---------- الرجوع خطوةً خطوة ---------- */
@@ -145,7 +179,21 @@ function renderHome(stats) {
     `<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
 }
 
-/* ---------- الاستيراد ---------- */
+/* ---------- تصدير البيانات لتضمينها (تسافر مع التطبيق) ---------- */
+async function exportData() {
+  const btn = $('exportBtn');
+  try {
+    const verses = await db.getAllVerses();
+    const surahs = await db.getSurahsByReverse();
+    const stats = await db.getStats();
+    if (!verses || !verses.length) { alert('لا توجد بيانات محفوظة للتصدير بعد.'); return; }
+    downloadJSON({ verses, surahs, stats }, 'quran.json');
+    if (btn) { const old = btn.textContent; btn.textContent = '✅ تم تنزيل quran.json'; btn.disabled = true; setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 2600); }
+  } catch (e) { alert('تعذّر التصدير: ' + (e && e.message ? e.message : e)); }
+}
+const exportBtnEl = $('exportBtn'); if (exportBtnEl) exportBtnEl.addEventListener('click', exportData);
+
+/* ---------- الاستيراد من الإكسل ---------- */
 fileInput.addEventListener('change', async (e) => {
   const file = e.target.files && e.target.files[0]; if (!file) return;
   errBox.hidden = true; prog.hidden = false; progMsg.textContent = 'جارٍ قراءة الملف…';
@@ -183,11 +231,13 @@ function readSettings() {
   const rangeType = $('rangeType').value;
   const from = rangeType === 'surah' ? parseInt($('fromSurah').value) : rangeType === 'juz' ? parseInt($('fromJuz').value) : parseInt($('singleSurahSelect').value);
   const to = rangeType === 'surah' ? parseInt($('toSurah').value) : rangeType === 'juz' ? parseInt($('toJuz').value) : from;
+  const sizeChip = document.querySelector('.chip.active[data-size]');
+  const lvlChip = document.querySelector('.chip.active[data-level]');
   return {
     rangeType, from, to,
-    size: parseInt((document.querySelector('.chip.active[data-size]') || {}).dataset && document.querySelector('.chip.active[data-size]').dataset.size || '7'),
+    size: sizeChip ? parseInt(sizeChip.dataset.size) : 7,
     difficultyMethod: $('difficultyMethod').value,
-    difficultyLevel: (document.querySelector('.chip.active[data-level]') || {}).dataset && document.querySelector('.chip.active[data-level]').dataset.level || 'سهل',
+    difficultyLevel: lvlChip ? lvlChip.dataset.level : 'سهل',
   };
 }
 $('generateBtn').addEventListener('click', async () => {
@@ -208,15 +258,28 @@ document.querySelectorAll('.chip').forEach((chip) => chip.addEventListener('clic
 }));
 $('rangeType').addEventListener('change', (e) => teacher.toggleRange(e.target.value));
 
-/* ---------- البدء الدفاعي ---------- */
+/* ---------- البدء الحصين ---------- */
 (async () => {
   try {
-    const ready = await db.isReady();
-    if (ready) { const stats = await db.getStats(); current = stats ? 'home' : 'import'; if (stats) renderHome(stats); }
+    let stats = null;
+    if (await db.isReady()) {
+      stats = await db.getStats();                 // جلسة سابقة محفوظة
+    } else {
+      // لا قاعدة محفوظة ⇒ جرّب البيانات المضمّنة قبل أن تطلب الإكسل
+      const embedded = await withTimeout(loadEmbedded(), 4000, null);
+      if (embedded) {
+        await db.saveAll(embedded.verses, embedded.surahs, embedded.stats);
+        stats = embedded.stats;
+      }
+    }
+    if (stats) { renderHome(stats); current = 'home'; }
     else { current = 'import'; }
+
     importScreen.hidden  = current !== 'import';
     homeScreen.hidden    = current !== 'home';
     teacherScreen.hidden = true; studentScreen.hidden = true; backBtn.hidden = true;
-  } catch (e) { fatal(e && e.message ? e.message : String(e)); }
-  setTimeout(hideSplash, 3000);
+    hideSplash();        // التطبيق جاهز لعرض شاشة ⇒ الشعار يزول الآن (لا قبله)
+  } catch (e) {
+    fatal(e && e.message ? e.message : String(e));
+  }
 })();
