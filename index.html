@@ -49,7 +49,7 @@
     <!-- الاستيراد -->
     <section id="importScreen" class="card" hidden>
       <h2 class="card-title">تحميل بيانات المصحف</h2>
-      <p class="muted">يعمل التطبيق بالكامل دون إنترنت. اختر ملف التصنيف من جهازك ليُقرأ محلياً.</p>
+      <p class="muted">يعمل التطبيق بالكامل دون إنترنت. إن كان التطبيق يحوي البيانات المضمّنة فستُحمَّل تلقائياً؛ وإلا فاختر ملف التصنيف من جهازك ليُقرأ محلياً.</p>
       <label class="file-btn" for="fileInput">📂 اختر ملف الإكسل (xlsx / xls / csv)</label>
       <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" hidden />
       <div id="importProgress" class="progress" hidden><div class="spinner"></div><span id="importMsg">جارٍ القراءة…</span></div>
@@ -89,6 +89,7 @@
       </div>
       <div class="card manage-card">
         <button id="installBtn" class="btn-install" hidden>⬇ تثبيت التطبيق على الجهاز</button>
+        <button id="exportBtn" class="btn-install" style="background:linear-gradient(180deg,#2ecc71,#1f9d57)">⬇ تصدير البيانات (quran.json)</button>
         <button id="reimportBtn" class="link-btn">🔄 إعادة تحميل الملف / مسح البيانات</button>
       </div>
     </section>
@@ -122,8 +123,7 @@
 
     <!-- الطالب -->
     <section id="studentScreen" hidden>
-
-      <!-- ١) اختيار النطاق/الحفظ قبل اللعب -->
+      <!-- ١) اختيار النطاق/الحفظ -->
       <div id="studentSetup" class="card" hidden>
         <h2 class="card-title">حدّد حفظك</h2>
         <p class="muted">ستُسحب الأسئلة من هذا النطاق فقط.</p>
@@ -137,20 +137,20 @@
         <button id="studentStartBtn" class="btn-primary">ابدأ المسابقة</button>
       </div>
 
-      <!-- ٢) قائمة المسابقات الخمس -->
+      <!-- ٢) قائمة المسابقات (student.js يضيف العناوين وبطاقات المراجعة ديناميكياً) -->
       <div id="gamesMenu" class="card" hidden>
         <h2 class="card-title">اختر مسابقة</h2>
         <div class="games-menu">
           <button class="game-pick" data-game="complete"><span class="gp-t">كمّل الآية</span><span class="gp-d">اختر التكملة الصحيحة للآية</span></button>
           <button class="game-pick" data-game="order"><span class="gp-t">رتّب الكلمات</span><span class="gp-d">اضغط الكلمات بترتيبها الصحيح</span></button>
           <button class="game-pick" data-game="hidden"><span class="gp-t">خمّن الكلمة المخفية</span><span class="gp-d">استخرج الكلمة المحجوبة من سياقها</span></button>
-          <button class="game-pick" data-game="surah"><span class="gp-t">إيه السورة دي؟</span><span class="gp-d">اعرف السورة من مقطع قصير</span></button>
+          <button class="game-pick" data-game="surah"><span class="gp-t">أيُّ سورةٍ هذه؟</span><span class="gp-d">اعرف السورة من مقطع قصير</span></button>
           <button class="game-pick" data-game="listen"><span class="gp-t">استمع وميّز</span><span class="gp-d">اسمع الآية واختر نصّها الصحيح</span></button>
         </div>
         <div class="question-actions"><button id="changeStudentRangeBtn" class="btn-secondary">تغيير النطاق</button></div>
       </div>
 
-      <!-- ٣) منطقة اللعب -->
+      <!-- ٣) منطقة اللعب (عناصر الكشف تُحقَن هنا ديناميكياً) -->
       <div id="gameArea" class="card game-card" hidden>
         <div class="game-header"><h2 id="gameTitle" class="card-title">كمّل الآية</h2>
           <div class="score-board"><span id="scoreDisplay">النقاط: 0</span><span id="streakDisplay">متتالية: 0 🔥</span></div></div>
@@ -165,7 +165,7 @@
     </section>
   </main>
 
-  <footer class="foot"><span>يعمل أوفلاين · مركز معاوية لتحفيظ القرآن الكريم</span><span id="verTag">v7</span></footer>
+  <footer class="foot"><span>يعمل أوفلاين · مركز معاوية لتحفيظ القرآن الكريم</span><span id="verTag">v8</span></footer>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script type="module" src="./js/app.js"></script>
